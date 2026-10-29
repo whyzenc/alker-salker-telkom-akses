@@ -1,0 +1,6 @@
+{
+  "name": "Alker Sarker Telkom",
+  "description": "Aplikasi Verifikasi & OCR Alat dan Sarana Kerja Teknisi Lapangan PT Telkom Akses Padang",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
