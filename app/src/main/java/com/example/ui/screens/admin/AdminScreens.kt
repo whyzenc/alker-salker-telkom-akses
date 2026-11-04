@@ -661,14 +661,19 @@ fun AdminTechnicianDetailVerificationScreen(
     equipmentList: List<EquipmentMaster>,
     submissions: List<InspectionSubmission>,
     onVerify: (submissionId: String, status: InspectionStatus, feedback: String?) -> Unit,
+    onRerunOcr: suspend (submissionId: String) -> Unit = {},
     onBack: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     val subMap = remember(submissions) { submissions.associateBy { it.equipmentId } }
 
     var selectedItemForAction by remember { mutableStateOf<Pair<EquipmentMaster, InspectionSubmission?>?>(null) }
     var isRejectAction by remember { mutableStateOf(false) }
     var rejectionReasonInput by remember { mutableStateOf("") }
     var reasonError by remember { mutableStateOf(false) }
+
+    var runningOcrSubId by remember { mutableStateOf<String?>(null) }
+    var updatedOcrSubId by remember { mutableStateOf<String?>(null) }
 
     var zoomPhotoData by remember { mutableStateOf<InspectionSubmission?>(null) }
 
@@ -755,7 +760,7 @@ fun AdminTechnicianDetailVerificationScreen(
                                     EquipmentTypeBadge(type = equipment.type)
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = equipment.category,
+                                        text = MasterData.formatCategory(equipment.category),
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -850,6 +855,51 @@ fun AdminTechnicianDetailVerificationScreen(
                                         }
                                     }
                                 }
+                            }
+
+                            // Tombol Proses OCR oleh Admin
+                            val isRunningThisOcr = runningOcrSubId == sub.id
+                            val isJustUpdated = updatedOcrSubId == sub.id
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    scope.launch {
+                                        runningOcrSubId = sub.id
+                                        onRerunOcr(sub.id)
+                                        runningOcrSubId = null
+                                        updatedOcrSubId = sub.id
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("rerun_ocr_button_${sub.id}"),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF2563EB)),
+                                enabled = !isRunningThisOcr
+                            ) {
+                                if (isRunningThisOcr) {
+                                    CircularProgressIndicator(
+                                        color = Color(0xFF2563EB),
+                                        modifier = Modifier.size(14.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Sedang Memproses OCR...", fontSize = 11.sp)
+                                } else {
+                                    Icon(AppIcons.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Proses OCR", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            if (isJustUpdated) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "✓ Hasil OCR diperbarui secara otomatis dari foto",
+                                    fontSize = 10.sp,
+                                    color = StatusVerified,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             }
 
                             // Rejection reason if already rejected

@@ -2,7 +2,8 @@ package com.example.data.model
 
 enum class EquipmentType {
     PHOTO,
-    PHOTO_OCR
+    PHOTO_OCR,
+    STATUS
 }
 
 enum class InspectionStatus(val label: String) {

@@ -538,4 +538,44 @@ object AppIcons {
             close()
         }
     }
+
+    val Refresh: ImageVector by lazy {
+        buildIcon("Refresh") {
+            moveTo(17.65f, 6.35f)
+            curveTo(16.2f, 4.9f, 14.21f, 4f, 12f, 4f)
+            curveTo(7.58f, 4f, 4.01f, 7.58f, 4.01f, 12f)
+            curveTo(4.01f, 16.42f, 7.58f, 20f, 12f, 20f)
+            curveTo(15.73f, 20f, 18.84f, 17.45f, 19.73f, 14f)
+            horizontalLineTo(17.65f)
+            curveTo(16.83f, 16.33f, 14.61f, 18f, 12f, 18f)
+            curveTo(8.69f, 18f, 6f, 15.31f, 6f, 12f)
+            curveTo(6f, 8.69f, 8.69f, 6f, 12f, 6f)
+            curveTo(13.66f, 6f, 15.14f, 6.69f, 16.22f, 7.78f)
+            lineTo(13f, 11f)
+            horizontalLineTo(20f)
+            verticalLineTo(4f)
+            lineTo(17.65f, 6.35f)
+            close()
+        }
+    }
+
+    val Upload: ImageVector by lazy {
+        buildIcon("Upload") {
+            moveTo(9f, 16f)
+            horizontalLineTo(15f)
+            verticalLineTo(10f)
+            horizontalLineTo(19f)
+            lineTo(12f, 3f)
+            lineTo(5f, 10f)
+            horizontalLineTo(9f)
+            verticalLineTo(16f)
+            close()
+            moveTo(5f, 18f)
+            horizontalLineTo(19f)
+            verticalLineTo(20f)
+            horizontalLineTo(5f)
+            verticalLineTo(18f)
+            close()
+        }
+    }
 }

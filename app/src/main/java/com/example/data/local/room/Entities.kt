@@ -65,7 +65,11 @@ data class InspectionEntity(
         technicianSto = technicianSto,
         equipmentId = equipmentId,
         equipmentName = equipmentName,
-        equipmentType = if (equipmentType == "PHOTO_OCR") EquipmentType.PHOTO_OCR else EquipmentType.PHOTO,
+        equipmentType = when (equipmentType) {
+            "PHOTO_OCR" -> EquipmentType.PHOTO_OCR
+            "STATUS" -> EquipmentType.STATUS
+            else -> EquipmentType.PHOTO
+        },
         photoUri = photoPath,
         originalSizeKb = originalSizeKb,
         compressedSizeKb = compressedSizeKb,

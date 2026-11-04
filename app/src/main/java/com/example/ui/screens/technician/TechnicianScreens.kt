@@ -28,10 +28,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
+import com.example.service.validation.UploadValidationResult
+import com.example.service.validation.UploadValidator
 import com.example.ui.theme.AppIcons
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -51,6 +56,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -71,6 +77,7 @@ import com.example.data.model.EquipmentMaster
 import com.example.data.model.EquipmentType
 import com.example.data.model.InspectionStatus
 import com.example.data.model.InspectionSubmission
+import com.example.data.local.MasterData
 import com.example.data.model.Period
 import com.example.data.model.User
 import com.example.service.image.ImageCompressor
@@ -385,7 +392,7 @@ fun TechnicianDashboardScreen(
                                 EquipmentTypeBadge(type = equipment.type)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = equipment.category,
+                                    text = MasterData.formatCategory(equipment.category),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -396,7 +403,21 @@ fun TechnicianDashboardScreen(
 
                         Column(horizontalAlignment = Alignment.End) {
                             StatusBadge(status = currentStatus)
-                            if (submission != null && submission.compressedSizeKb > 0) {
+                            if (currentStatus == InspectionStatus.REJECTED) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFFFEF2F2))
+                                        .clickable { onSelectEquipment(equipment) }
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(AppIcons.Upload, contentDescription = null, tint = StatusRejected, modifier = Modifier.size(12.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Upload Ulang", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusRejected)
+                                }
+                            } else if (submission != null && submission.compressedSizeKb > 0) {
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "${submission.compressedSizeKb} KB",
@@ -422,23 +443,26 @@ fun TechnicianChecklistScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedStatusFilter by remember { mutableStateOf<InspectionStatus?>(null) }
     var selectedTypeFilter by remember { mutableStateOf<EquipmentType?>(null) }
+    var selectedCategoryFilter by remember { mutableStateOf<String?>(null) }
 
     val subMap = remember(submissions) { submissions.associateBy { it.equipmentId } }
 
     val filteredList = equipmentList.filter { item ->
         val matchesSearch = item.name.contains(searchQuery, ignoreCase = true) ||
-                item.category.contains(searchQuery, ignoreCase = true)
+                item.category.contains(searchQuery, ignoreCase = true) ||
+                MasterData.formatCategory(item.category).contains(searchQuery, ignoreCase = true)
         val itemStatus = subMap[item.id]?.status ?: InspectionStatus.UNCHECKED
         val matchesStatus = selectedStatusFilter == null || itemStatus == selectedStatusFilter
         val matchesType = selectedTypeFilter == null || item.type == selectedTypeFilter
-        matchesSearch && matchesStatus && matchesType
+        val matchesCategory = selectedCategoryFilter == null || item.category.equals(selectedCategoryFilter, ignoreCase = true)
+        matchesSearch && matchesStatus && matchesType && matchesCategory
     }
 
     Scaffold(
         topBar = {
             TelkomTopAppBar(
                 title = "Checklist Peralatan",
-                subtitle = "${filteredList.size} dari ${equipmentList.size} Item",
+                subtitle = "${filteredList.size} dari ${equipmentList.size} Item (27 Total)",
                 onBack = onBack
             )
         }
@@ -457,7 +481,7 @@ fun TechnicianChecklistScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .testTag("search_equipment_input"),
-                placeholder = { Text("Cari nama alat (OTDR, Splicer, Tangga)...", fontSize = 13.sp) },
+                placeholder = { Text("Cari nama alat (Splicer, OTDR, KBM, Internet)...", fontSize = 13.sp) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Cari") },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
@@ -471,16 +495,89 @@ fun TechnicianChecklistScreen(
             ) {
                 item {
                     FilterChip(
-                        selected = selectedStatusFilter == null && selectedTypeFilter == null,
+                        selected = selectedStatusFilter == null && selectedTypeFilter == null && selectedCategoryFilter == null,
                         onClick = {
                             selectedStatusFilter = null
                             selectedTypeFilter = null
+                            selectedCategoryFilter = null
                         },
-                        label = { Text("Semua", fontSize = 12.sp) },
+                        label = { Text("Semua (27)", fontSize = 12.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = TelkomRed,
                             selectedLabelColor = Color.White
                         )
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = selectedCategoryFilter == "alat_ukur",
+                        onClick = {
+                            selectedCategoryFilter = if (selectedCategoryFilter == "alat_ukur") null else "alat_ukur"
+                        },
+                        label = { Text("Alat Ukur", fontSize = 12.sp) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = selectedCategoryFilter == "kendaraan",
+                        onClick = {
+                            selectedCategoryFilter = if (selectedCategoryFilter == "kendaraan") null else "kendaraan"
+                        },
+                        label = { Text("Kendaraan", fontSize = 12.sp) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = selectedCategoryFilter == "perlengkapan",
+                        onClick = {
+                            selectedCategoryFilter = if (selectedCategoryFilter == "perlengkapan") null else "perlengkapan"
+                        },
+                        label = { Text("Perlengkapan", fontSize = 12.sp) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = selectedCategoryFilter == "genset",
+                        onClick = {
+                            selectedCategoryFilter = if (selectedCategoryFilter == "genset") null else "genset"
+                        },
+                        label = { Text("Genset", fontSize = 12.sp) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = selectedCategoryFilter == "kabel_aksesori",
+                        onClick = {
+                            selectedCategoryFilter = if (selectedCategoryFilter == "kabel_aksesori") null else "kabel_aksesori"
+                        },
+                        label = { Text("Kabel & Aksesori", fontSize = 12.sp) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = selectedCategoryFilter == "komunikasi",
+                        onClick = {
+                            selectedCategoryFilter = if (selectedCategoryFilter == "komunikasi") null else "komunikasi"
+                        },
+                        label = { Text("Komunikasi", fontSize = 12.sp) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = selectedTypeFilter == EquipmentType.PHOTO_OCR,
+                        onClick = {
+                            selectedTypeFilter = if (selectedTypeFilter == EquipmentType.PHOTO_OCR) null else EquipmentType.PHOTO_OCR
+                        },
+                        label = { Text("Hanya OCR", fontSize = 12.sp) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = selectedTypeFilter == EquipmentType.STATUS,
+                        onClick = {
+                            selectedTypeFilter = if (selectedTypeFilter == EquipmentType.STATUS) null else EquipmentType.STATUS
+                        },
+                        label = { Text("Status (Internet)", fontSize = 12.sp) }
                     )
                 }
                 item {
@@ -517,15 +614,6 @@ fun TechnicianChecklistScreen(
                             selectedStatusFilter = if (selectedStatusFilter == InspectionStatus.REJECTED) null else InspectionStatus.REJECTED
                         },
                         label = { Text("Ditolak", fontSize = 12.sp) }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = selectedTypeFilter == EquipmentType.PHOTO_OCR,
-                        onClick = {
-                            selectedTypeFilter = if (selectedTypeFilter == EquipmentType.PHOTO_OCR) null else EquipmentType.PHOTO_OCR
-                        },
-                        label = { Text("Hanya OCR", fontSize = 12.sp) }
                     )
                 }
             }
@@ -576,7 +664,7 @@ fun TechnicianChecklistScreen(
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = equipment.category,
+                                            text = MasterData.formatCategory(equipment.category),
                                             fontSize = 12.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -616,13 +704,28 @@ fun TechnicianChecklistScreen(
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(6.dp))
                                             .background(Color(0xFFFEF2F2))
-                                            .padding(8.dp)
+                                            .padding(10.dp)
                                     ) {
-                                        Text(
-                                            text = "Alasan Tolak: ${sub?.adminFeedback}",
-                                            fontSize = 11.sp,
-                                            color = StatusRejected
-                                        )
+                                        Column {
+                                            Text(
+                                                text = "Alasan Tolak: ${sub?.adminFeedback}",
+                                                fontSize = 11.sp,
+                                                color = StatusRejected
+                                            )
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Row(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(StatusRejected)
+                                                    .clickable { onSelectEquipment(equipment) }
+                                                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(AppIcons.Upload, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Upload Ulang Sekarang", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -641,13 +744,28 @@ fun EquipmentDetailUploadScreen(
     currentUser: User,
     currentPeriod: Period,
     onSaveSubmission: (InspectionSubmission) -> Unit,
+    onReuploadSubmission: ((InspectionSubmission) -> Unit)? = null,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var selectedImageUri by remember { mutableStateOf<String?>(currentSubmission?.photoUri) }
+    var isReuploadMode by remember { mutableStateOf(currentSubmission?.status == InspectionStatus.REJECTED) }
+
+    val initialPhotos = remember(currentSubmission) {
+        val list = mutableListOf<String>()
+        if (!currentSubmission?.photoUri.isNullOrEmpty()) {
+            currentSubmission!!.photoUri!!.split(",").filter { it.isNotBlank() }.forEach { list.add(it) }
+        }
+        list
+    }
+    var photoList by remember { mutableStateOf<List<String>>(initialPhotos) }
+    var activePhotoIndex by remember { mutableIntStateOf(0) }
+
+    var selectedImageUri by remember {
+        mutableStateOf<String?>(photoList.getOrNull(0) ?: currentSubmission?.photoUri)
+    }
     var originalSizeKb by remember { mutableStateOf(currentSubmission?.originalSizeKb ?: 0) }
     var compressedSizeKb by remember { mutableStateOf(currentSubmission?.compressedSizeKb ?: 0) }
     var compressionRatio by remember { mutableStateOf(0) }
@@ -655,35 +773,55 @@ fun EquipmentDetailUploadScreen(
     var isProcessingCompression by remember { mutableStateOf(false) }
     var isProcessingOcr by remember { mutableStateOf(false) }
 
+    var uploadRejectionMessage by remember { mutableStateOf<String?>(null) }
+    var showRejectionDialog by remember { mutableStateOf(false) }
+
     var ocrConfidence by remember { mutableStateOf(currentSubmission?.ocrConfidence ?: 0) }
     var ocrRawText by remember { mutableStateOf(currentSubmission?.ocrRawResult ?: "") }
     var ocrCorrectedText by remember { mutableStateOf(currentSubmission?.ocrCorrectedResult ?: currentSubmission?.ocrRawResult ?: "") }
 
     var capturedTimestamp by remember {
-        mutableStateOf(currentSubmission?.capturedDate ?: SimpleDateFormat("dd MMM yyyy HH:mm 'WIB'", Locale("id", "ID")).format(Date()))
+        mutableStateOf(currentSubmission?.capturedDate ?: SimpleDateFormat("dd MMMM yyyy HH:mm 'WIB'", Locale("id", "ID")).format(Date()))
     }
     var capturedLocation by remember {
-        mutableStateOf(currentSubmission?.capturedLocation ?: "Padang Barat, Kota Padang")
+        mutableStateOf(currentSubmission?.capturedLocation ?: "STO Padang Baru, Padang Utara")
     }
+
+    val initialSplit = (currentSubmission?.capturedDate ?: "").split(" ")
+    var detectedDay by remember { mutableStateOf(if (initialSplit.isNotEmpty() && initialSplit[0].isNotBlank()) initialSplit[0] else "03") }
+    var detectedMonth by remember { mutableStateOf(if (initialSplit.size > 1) initialSplit[1] else "November") }
+    var detectedYear by remember { mutableStateOf(if (initialSplit.size > 2) initialSplit[2] else "2026") }
+    var detectedTime by remember { mutableStateOf(if (initialSplit.size > 3) "${initialSplit[3]} ${initialSplit.getOrNull(4) ?: "WIB"}" else "17:16 WIB") }
 
     var showZoomDialog by remember { mutableStateOf(false) }
 
-    // Photo picker launcher (0 permission API)
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            scope.launch {
-                isProcessingCompression = true
-                val result = ImageCompressor.compressAndSaveToInternalStorage(context, uri, equipment.name)
-                selectedImageUri = result.persistentFilePath
-                originalSizeKb = (result.originalSizeBytes / 1024).toInt()
-                compressedSizeKb = (result.compressedSizeBytes / 1024).toInt()
-                compressionRatio = result.compressionRatioPercent
-                isProcessingCompression = false
+    fun processAndAddPhoto(uri: Uri) {
+        val validation = UploadValidator.validateUpload(context, uri, currentPhotoCount = photoList.size)
+        when (validation) {
+            is UploadValidationResult.Rejected -> {
+                uploadRejectionMessage = validation.reason
+                showRejectionDialog = true
+                scope.launch { snackbarHostState.showSnackbar(validation.reason) }
+            }
+            is UploadValidationResult.Success -> {
+                uploadRejectionMessage = null
+                scope.launch {
+                    isProcessingCompression = true
+                    val result = ImageCompressor.compressAndSaveToInternalStorage(
+                        context,
+                        uri,
+                        "${equipment.name} Foto ${photoList.size + 1}"
+                    )
+                    val updated = photoList + result.persistentFilePath
+                    photoList = updated
+                    activePhotoIndex = updated.size - 1
+                    selectedImageUri = result.persistentFilePath
+                    originalSizeKb = (result.originalSizeBytes / 1024).toInt()
+                    compressedSizeKb = (result.compressedSizeBytes / 1024).toInt()
+                    compressionRatio = result.compressionRatioPercent
+                    isProcessingCompression = false
 
-                // If PHOTO_OCR, execute OCR engine
-                if (equipment.type == EquipmentType.PHOTO_OCR) {
+                    // Process OCR & Watermark extraction
                     isProcessingOcr = true
                     val ocrResult = OcrService.processOcr(equipment.id, equipment.name)
                     ocrConfidence = ocrResult.confidence
@@ -691,42 +829,132 @@ fun EquipmentDetailUploadScreen(
                     ocrCorrectedText = ocrResult.extractedText
                     capturedTimestamp = ocrResult.detectedDate
                     capturedLocation = ocrResult.detectedLocation
+                    detectedDay = ocrResult.detectedDay
+                    detectedMonth = ocrResult.detectedMonth
+                    detectedYear = ocrResult.detectedYear
+                    detectedTime = ocrResult.detectedTime
                     isProcessingOcr = false
                 }
             }
         }
     }
 
+    // Photo picker launcher (0 permission API)
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            processAndAddPhoto(uri)
+        }
+    }
+
+    // Generic file picker for document/format validation testing
+    val genericFilePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            processAndAddPhoto(uri)
+        }
+    }
+
     // Camera capture simulation
     fun triggerCameraSimulation() {
+        if (photoList.size >= UploadValidator.MAX_PHOTOS_COUNT) {
+            val rejection = UploadValidator.validateDirect(
+                fileSizeBytes = 2_500_000L,
+                fileExtensionOrMime = "jpg",
+                currentPhotoCount = photoList.size
+            )
+            if (rejection is UploadValidationResult.Rejected) {
+                uploadRejectionMessage = rejection.reason
+                showRejectionDialog = true
+                scope.launch { snackbarHostState.showSnackbar(rejection.reason) }
+            }
+            return
+        }
+
+        uploadRejectionMessage = null
         scope.launch {
             isProcessingCompression = true
-            val sample = ImageCompressor.generatePersistentSamplePhoto(context, equipment.name)
+            val sample = ImageCompressor.generatePersistentSamplePhoto(
+                context,
+                "${equipment.name} Foto ${photoList.size + 1}"
+            )
+            val updated = photoList + sample.persistentFilePath
+            photoList = updated
+            activePhotoIndex = updated.size - 1
             selectedImageUri = sample.persistentFilePath
             originalSizeKb = (sample.originalSizeBytes / 1024).toInt()
             compressedSizeKb = (sample.compressedSizeBytes / 1024).toInt()
             compressionRatio = sample.compressionRatioPercent
             isProcessingCompression = false
 
-            if (equipment.type == EquipmentType.PHOTO_OCR) {
-                isProcessingOcr = true
-                val ocrResult = OcrService.processOcr(equipment.id, equipment.name)
-                ocrConfidence = ocrResult.confidence
-                ocrRawText = ocrResult.extractedText
-                ocrCorrectedText = ocrResult.extractedText
-                capturedTimestamp = ocrResult.detectedDate
-                capturedLocation = ocrResult.detectedLocation
-                isProcessingOcr = false
-            }
-            snackbarHostState.showSnackbar("Foto bukti berhasil disimpan permanen ke database.")
+            isProcessingOcr = true
+            val ocrResult = OcrService.processOcr(equipment.id, equipment.name)
+            ocrConfidence = ocrResult.confidence
+            ocrRawText = ocrResult.extractedText
+            ocrCorrectedText = ocrResult.extractedText
+            capturedTimestamp = ocrResult.detectedDate
+            capturedLocation = ocrResult.detectedLocation
+            detectedDay = ocrResult.detectedDay
+            detectedMonth = ocrResult.detectedMonth
+            detectedYear = ocrResult.detectedYear
+            detectedTime = ocrResult.detectedTime
+            isProcessingOcr = false
+
+            snackbarHostState.showSnackbar("Foto bukti (${updated.size}/3) berhasil disimpan permanen.")
         }
     }
+
+    // Validation Simulation Test Helper (Memenuhi 3 kriteria uji)
+    fun triggerSimulatedValidationTest(type: String) {
+        when (type) {
+            "LARGE_FILE" -> {
+                val res = UploadValidator.validateDirect(
+                    fileSizeBytes = 12_582_912L, // 12 MB > 10 MB
+                    fileExtensionOrMime = "jpg",
+                    currentPhotoCount = photoList.size
+                )
+                if (res is UploadValidationResult.Rejected) {
+                    uploadRejectionMessage = res.reason
+                    showRejectionDialog = true
+                    scope.launch { snackbarHostState.showSnackbar(res.reason) }
+                }
+            }
+            "INVALID_FORMAT" -> {
+                val res = UploadValidator.validateDirect(
+                    fileSizeBytes = 2_048_000L,
+                    fileExtensionOrMime = "pdf", // Selain JPG/PNG/WEBP
+                    currentPhotoCount = photoList.size
+                )
+                if (res is UploadValidationResult.Rejected) {
+                    uploadRejectionMessage = res.reason
+                    showRejectionDialog = true
+                    scope.launch { snackbarHostState.showSnackbar(res.reason) }
+                }
+            }
+            "FOURTH_PHOTO" -> {
+                val res = UploadValidator.validateDirect(
+                    fileSizeBytes = 2_048_000L,
+                    fileExtensionOrMime = "jpg",
+                    currentPhotoCount = 3 // Sudah 3 foto, coba foto ke-4
+                )
+                if (res is UploadValidationResult.Rejected) {
+                    uploadRejectionMessage = res.reason
+                    showRejectionDialog = true
+                    scope.launch { snackbarHostState.showSnackbar(res.reason) }
+                }
+            }
+        }
+    }
+
+    val isReupload = isReuploadMode || currentSubmission?.status == InspectionStatus.REJECTED
 
     Scaffold(
         topBar = {
             TelkomTopAppBar(
                 title = equipment.name,
-                subtitle = equipment.category,
+                subtitle = MasterData.formatCategory(equipment.category),
                 onBack = onBack
             )
         },
@@ -767,7 +995,7 @@ fun EquipmentDetailUploadScreen(
                                 equipmentId = equipment.id,
                                 equipmentName = equipment.name,
                                 equipmentType = equipment.type,
-                                photoUri = selectedImageUri,
+                                photoUri = photoList.joinToString(",").ifEmpty { selectedImageUri },
                                 originalSizeKb = originalSizeKb,
                                 compressedSizeKb = compressedSizeKb,
                                 capturedDate = capturedTimestamp,
@@ -781,17 +1009,25 @@ fun EquipmentDetailUploadScreen(
                                 updatedAt = System.currentTimeMillis()
                             )
 
-                            onSaveSubmission(newSubmission)
+                            if (isReupload && onReuploadSubmission != null) {
+                                onReuploadSubmission(newSubmission)
+                            } else {
+                                onSaveSubmission(newSubmission)
+                            }
                         },
                         modifier = Modifier
                             .weight(2f)
-                            .testTag("submit_inspection_button"),
+                            .testTag(if (isReupload) "submit_reupload_button" else "submit_inspection_button"),
                         colors = ButtonDefaults.buttonColors(containerColor = TelkomRed),
-                        enabled = !isProcessingCompression && !isProcessingOcr && selectedImageUri != null
+                        enabled = !isProcessingCompression && !isProcessingOcr && (selectedImageUri != null || photoList.isNotEmpty())
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            imageVector = if (isReupload) AppIcons.Upload else Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Simpan & Kirim Verifikasi")
+                        Text(if (isReupload) "Upload Ulang & Kirim" else "Simpan & Kirim Verifikasi")
                     }
                 }
             }
@@ -805,6 +1041,120 @@ fun EquipmentDetailUploadScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Upload Rejection Alert Banner (Jika berkas >10MB, non-JPG/PNG/WEBP, atau foto ke-4)
+            if (uploadRejectionMessage != null) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("upload_rejection_banner"),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFCA5A5)),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = AppIcons.ErrorCircle,
+                                contentDescription = null,
+                                tint = Color(0xFFDC2626),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "UNGGAHAN DITOLAK",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFF991B1B)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = uploadRejectionMessage ?: "",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFFB91C1C),
+                                    modifier = Modifier.testTag("upload_rejection_message")
+                                )
+                            }
+                            IconButton(onClick = { uploadRejectionMessage = null }) {
+                                Icon(Icons.Default.Close, contentDescription = "Tutup", tint = Color(0xFF991B1B), modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+            }
+            if (equipment.type == EquipmentType.STATUS) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("status_verification_card"),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color(0xFF16A34A),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "Verifikasi Status Kuota Internet",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF166534)
+                                    )
+                                    Text(
+                                        text = "Paket internet operasional minimum 2GB aktif untuk teknisi",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF15803D)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White)
+                                    .border(1.dp, Color(0xFFBBF7D0), RoundedCornerShape(8.dp))
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Paket 2GB Aktif & Terverifikasi",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF166534)
+                                    )
+                                    Text(
+                                        text = "Telkomsel Enterprise • Kuota 2.45 GB Sisa",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Button(
+                                    onClick = { triggerCameraSimulation() },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(if (photoList.isNotEmpty() || selectedImageUri != null) "Perbarui Status" else "Verifikasi Status", fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Photo Guideline Card
             item {
                 Card(
@@ -851,7 +1201,9 @@ fun EquipmentDetailUploadScreen(
             if (currentSubmission != null) {
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("current_submission_status_card"),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -871,12 +1223,28 @@ fun EquipmentDetailUploadScreen(
                             }
                             if (currentSubmission.status == InspectionStatus.REJECTED && !currentSubmission.adminFeedback.isNullOrEmpty()) {
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Alasan Penolakan Admin: ${currentSubmission.adminFeedback}",
-                                    fontSize = 12.sp,
-                                    color = StatusRejected,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(StatusRejectedBg)
+                                        .padding(10.dp)
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "Alasan Penolakan Admin:",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = StatusRejected
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = currentSubmission.adminFeedback,
+                                            fontSize = 12.sp,
+                                            color = StatusRejected
+                                        )
+                                    }
+                                }
                             }
                             if (currentSubmission.status == InspectionStatus.VERIFIED && !currentSubmission.verifiedBy.isNullOrEmpty()) {
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -886,6 +1254,176 @@ fun EquipmentDetailUploadScreen(
                                     color = StatusVerified
                                 )
                             }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    isReuploadMode = true
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("reupload_button"),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = TelkomRed)
+                            ) {
+                                Icon(AppIcons.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Upload Ulang Foto Bukti", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Card: Pembacaan Watermark Overlay (Tanggal, Bulan, Tahun)
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("watermark_overlay_card"),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBBF7D0)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = StatusVerified,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Watermark Overlay Foto (PaddleOCR)",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF166534)
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFFDCFCE7))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "Terbaca Otomatis",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = StatusVerified
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Tanggal, Bulan, dan Tahun foto terbaca otomatis dari overlay Timestamp Camera:",
+                            fontSize = 11.sp,
+                            color = Color(0xFF14532D)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        val splitDate = capturedTimestamp.split(" ")
+                        val dayVal = if (detectedDay.isNotEmpty()) detectedDay else splitDate.getOrNull(0) ?: "03"
+                        val monthVal = if (detectedMonth.isNotEmpty()) detectedMonth else splitDate.getOrNull(1) ?: "November"
+                        val yearVal = if (detectedYear.isNotEmpty()) detectedYear else splitDate.getOrNull(2) ?: "2026"
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Tanggal
+                            Surface(
+                                modifier = Modifier.weight(1f),
+                                color = Color.White,
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDCFCE7))
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("TANGGAL", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                                    Text(
+                                        text = dayVal,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFF15803D),
+                                        modifier = Modifier.testTag("ocr_detected_day")
+                                    )
+                                }
+                            }
+
+                            // Bulan
+                            Surface(
+                                modifier = Modifier.weight(1.3f),
+                                color = Color.White,
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDCFCE7))
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("BULAN", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                                    Text(
+                                        text = monthVal,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFF15803D),
+                                        modifier = Modifier.testTag("ocr_detected_month")
+                                    )
+                                }
+                            }
+
+                            // Tahun
+                            Surface(
+                                modifier = Modifier.weight(1.1f),
+                                color = Color.White,
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDCFCE7))
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("TAHUN", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                                    Text(
+                                        text = yearVal,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFF15803D),
+                                        modifier = Modifier.testTag("ocr_detected_year")
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Jam: ${if (detectedTime.isNotEmpty()) detectedTime else capturedTimestamp.substringAfterLast(" ", "17:16 WIB")}",
+                                fontSize = 11.sp,
+                                color = Color(0xFF15803D)
+                            )
+                            Text(
+                                text = "Lokasi: $capturedLocation",
+                                fontSize = 11.sp,
+                                color = Color(0xFF15803D),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }
@@ -900,12 +1438,106 @@ fun EquipmentDetailUploadScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Foto Bukti Alat",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Foto Bukti Alat",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (photoList.size >= 3) Color(0xFFFEF2F2) else Color(0xFFEFF6FF))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "${photoList.size}/3 Foto (Maks. 3)",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (photoList.size >= 3) StatusRejected else Color(0xFF2563EB),
+                                    modifier = Modifier.testTag("photo_count_indicator")
+                                )
+                            }
+                        }
+
+                        // Thumbnail strip if there are multiple photos
+                        if (photoList.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(photoList.indices.toList()) { index ->
+                                    val path = photoList[index]
+                                    val isSelected = (activePhotoIndex == index) || (selectedImageUri == path)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(68.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .border(
+                                                2.dp,
+                                                if (isSelected) TelkomRed else Color(0xFFCBD5E1),
+                                                RoundedCornerShape(8.dp)
+                                            )
+                                            .clickable {
+                                                activePhotoIndex = index
+                                                selectedImageUri = path
+                                            }
+                                    ) {
+                                        AsyncImage(
+                                            model = path,
+                                            contentDescription = "Foto ${index + 1}",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        // Delete button on thumbnail
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(2.dp)
+                                                .size(20.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.Black.copy(alpha = 0.7f))
+                                                .clickable {
+                                                    val updated = photoList.toMutableList().apply { removeAt(index) }
+                                                    photoList = updated
+                                                    activePhotoIndex = (activePhotoIndex - 1).coerceAtLeast(0)
+                                                    selectedImageUri = updated.getOrNull(activePhotoIndex)
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Hapus",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomStart)
+                                                .padding(2.dp)
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(Color.Black.copy(alpha = 0.65f))
+                                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                        ) {
+                                            Text(
+                                                text = "#${index + 1}",
+                                                fontSize = 9.sp,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(10.dp))
 
                         // Preview Box
@@ -1013,18 +1645,19 @@ fun EquipmentDetailUploadScreen(
                         // Capture buttons
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
                                 onClick = { triggerCameraSimulation() },
                                 modifier = Modifier
                                     .weight(1f)
                                     .testTag("camera_capture_button"),
-                                colors = ButtonDefaults.buttonColors(containerColor = TelkomRed)
+                                colors = ButtonDefaults.buttonColors(containerColor = TelkomRed),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
                             ) {
                                 Icon(AppIcons.Camera, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Ambil Foto", fontSize = 12.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Kamera", fontSize = 11.sp)
                             }
 
                             OutlinedButton(
@@ -1035,11 +1668,87 @@ fun EquipmentDetailUploadScreen(
                                 },
                                 modifier = Modifier
                                     .weight(1f)
-                                    .testTag("gallery_pick_button")
+                                    .testTag("gallery_pick_button"),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
                             ) {
                                 Icon(AppIcons.PhotoLibrary, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Dari Galeri", fontSize = 12.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Galeri", fontSize = 11.sp)
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    genericFilePickerLauncher.launch("*/*")
+                                },
+                                modifier = Modifier
+                                    .weight(1.1f)
+                                    .testTag("generic_file_pick_button"),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                            ) {
+                                Icon(AppIcons.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Pilih Berkas", fontSize = 11.sp)
+                            }
+                        }
+
+                        // Simulation & Validation Testing Card (SOP Telkom Akses)
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("upload_validation_test_card"),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Uji Validasi Unggahan (Aturan SOP)",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF92400E)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Mengunggah berkas >10 MB, format selain JPG/PNG/WEBP, atau foto ke-4 akan ditolak dengan pesan kesalahan resmi.",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFB45309),
+                                    lineHeight = 15.sp
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { triggerSimulatedValidationTest("LARGE_FILE") },
+                                        modifier = Modifier.weight(1f).testTag("test_validation_large_file"),
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB45309))
+                                    ) {
+                                        Text(">10 MB", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    OutlinedButton(
+                                        onClick = { triggerSimulatedValidationTest("INVALID_FORMAT") },
+                                        modifier = Modifier.weight(1.1f).testTag("test_validation_invalid_format"),
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB45309))
+                                    ) {
+                                        Text("Non-JPG/PNG", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    OutlinedButton(
+                                        onClick = { triggerSimulatedValidationTest("FOURTH_PHOTO") },
+                                        modifier = Modifier.weight(1f).testTag("test_validation_fourth_photo"),
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB45309))
+                                    ) {
+                                        Text("Foto ke-4", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
                             }
                         }
 
@@ -1178,6 +1887,47 @@ fun EquipmentDetailUploadScreen(
             timestampText = capturedTimestamp,
             locationText = capturedLocation,
             onDismiss = { showZoomDialog = false }
+        )
+    }
+
+    // Rejection Alert Dialog
+    if (showRejectionDialog && uploadRejectionMessage != null) {
+        AlertDialog(
+            onDismissRequest = { showRejectionDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = AppIcons.ErrorCircle,
+                        contentDescription = null,
+                        tint = Color(0xFFDC2626),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Unggahan Ditolak",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF991B1B)
+                    )
+                }
+            },
+            text = {
+                Text(
+                    text = uploadRejectionMessage ?: "",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 18.sp,
+                    modifier = Modifier.testTag("rejection_dialog_text")
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showRejectionDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = TelkomRed),
+                    modifier = Modifier.testTag("dismiss_rejection_dialog_button")
+                ) {
+                    Text("Mengerti")
+                }
+            }
         )
     }
 }

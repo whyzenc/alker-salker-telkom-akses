@@ -201,6 +201,10 @@ fun AlkerSarkerApp(repository: InspectionRepository) {
                             repository.saveSubmission(sub)
                             currentScreen = AppScreen.TECH_DASHBOARD
                         },
+                        onReuploadSubmission = { sub ->
+                            repository.reuploadSubmission(sub)
+                            currentScreen = AppScreen.TECH_DASHBOARD
+                        },
                         onBack = { currentScreen = AppScreen.TECH_DASHBOARD }
                     )
                 }
@@ -245,6 +249,9 @@ fun AlkerSarkerApp(repository: InspectionRepository) {
                         submissions = techSubmissions,
                         onVerify = { subId, status, feedback ->
                             repository.verifySubmission(subId, status, feedback, user.name)
+                        },
+                        onRerunOcr = { subId ->
+                            repository.rerunOcr(subId, user.name)
                         },
                         onBack = { currentScreen = AppScreen.ADMIN_DASHBOARD }
                     )

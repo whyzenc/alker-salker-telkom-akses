@@ -1,6 +1,7 @@
 package com.example.ui.screens.auth
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,6 +78,10 @@ fun LoginScreen(
             errorMessage = "Silakan masukkan NIK atau email Anda."
             return
         }
+        if (pass.isBlank()) {
+            errorMessage = "Silakan masukkan password Anda."
+            return
+        }
         scope.launch {
             isLoading = true
             errorMessage = null
@@ -85,7 +90,7 @@ fun LoginScreen(
             result.onSuccess { user ->
                 onLoginSuccess(user)
             }.onFailure { ex ->
-                errorMessage = ex.message ?: "Login gagal. Periksa NIK dan password."
+                errorMessage = ex.message ?: "Password yang Anda masukkan salah. Silakan coba lagi."
                 snackbarHostState.showSnackbar(errorMessage ?: "Login gagal")
             }
         }
@@ -200,19 +205,48 @@ fun LoginScreen(
                                     )
                                 }
                             },
+                            isError = errorMessage != null,
                             singleLine = true,
                             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             shape = RoundedCornerShape(10.dp)
                         )
 
                         if (errorMessage != null) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = errorMessage!!,
-                                color = MaterialTheme.colorScheme.error,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFFFEF2F2))
+                                    .border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(8.dp))
+                                    .padding(10.dp)
+                                    .testTag("login_error_box")
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = AppIcons.ErrorCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFFDC2626),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = "Login Gagal",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF991B1B)
+                                        )
+                                        Text(
+                                            text = errorMessage!!,
+                                            color = Color(0xFFB91C1C),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.testTag("login_error_message")
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(18.dp))

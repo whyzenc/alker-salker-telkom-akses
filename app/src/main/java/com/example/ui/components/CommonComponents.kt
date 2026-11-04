@@ -115,11 +115,31 @@ fun EquipmentTypeBadge(
     type: EquipmentType,
     modifier: Modifier = Modifier
 ) {
-    val isOcr = type == EquipmentType.PHOTO_OCR
-    val bg = if (isOcr) Color(0xFFEFF6FF) else Color(0xFFF1F5F9)
-    val fg = if (isOcr) Color(0xFF2563EB) else Color(0xFF475569)
-    val icon = if (isOcr) AppIcons.Scanner else AppIcons.Camera
-    val label = if (isOcr) "PHOTO + OCR" else "PHOTO"
+    val bg: Color
+    val fg: Color
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+    val label: String
+
+    when (type) {
+        EquipmentType.PHOTO_OCR -> {
+            bg = Color(0xFFEFF6FF)
+            fg = Color(0xFF2563EB)
+            icon = AppIcons.Scanner
+            label = "PHOTO_OCR"
+        }
+        EquipmentType.PHOTO -> {
+            bg = Color(0xFFF1F5F9)
+            fg = Color(0xFF475569)
+            icon = AppIcons.Camera
+            label = "PHOTO"
+        }
+        EquipmentType.STATUS -> {
+            bg = Color(0xFFF0FDF4)
+            fg = Color(0xFF16A34A)
+            icon = Icons.Default.Check
+            label = "STATUS"
+        }
+    }
 
     Row(
         modifier = modifier

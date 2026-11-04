@@ -108,10 +108,10 @@ class InspectionRepository(
         val budi = MasterData.technicians[1]
 
         val initialPhotos = listOf(
-            Triple("Kendaraan Operasional", "SUB-01", "ODOMETER: 42.850 KM\nPLAT: BA 1948 QX"),
-            Triple("OTDR", "SUB-02", "STATUS LAYAR: MENYALA\nLOSS: 0.18 dB/km\nPOWER: -18.42 dBm"),
-            Triple("Tangga Teleskopik / Fiber", "SUB-03", ""),
-            Triple("Fusion Splicer", "SUB-04", "SN: FSM-70S-44182\nCAL: VALID")
+            Triple("KBM Roda 2", "SUB-01", "KBM RODA 2 (MOTOR OPERASIONAL)\nODOMETER: 42.850 KM\nPLAT: BA 1948 QX\nSTATUS KENDARAAN: LAYAK OPERASIONAL"),
+            Triple("OTDR", "SUB-02", "STATUS LAYAR: MENYALA (ACTIVE)\nTOTAL LOSS: 0.18 dB/km\nPOWER LEVEL: -18.42 dBm"),
+            Triple("Tangga Dorong Aluminium 5.1 Meter", "SUB-03", ""),
+            Triple("Splicer", "SUB-04", "SN: FSM-70S-44182\nCALIBRATION: VALID\nARC COUNT: 1420\nSTATUS: CLEAN & OPERATIONAL")
         )
 
         val seededList = mutableListOf<InspectionEntity>()
@@ -178,7 +178,7 @@ class InspectionRepository(
                     actorName = "Rahma Wulandari",
                     actorRole = "Admin Assurance",
                     action = "TOLAK",
-                    equipmentName = "Tangga Teleskopik / Fiber",
+                    equipmentName = "Tangga Dorong Aluminium 5.1 Meter",
                     technicianName = "Ahmad Fauzan",
                     timestamp = "26 Okt 2026 11:05 WIB",
                     notes = "Tali pengikat tangga tidak tampak jelas dan pencahayaan kurang."
@@ -188,26 +188,40 @@ class InspectionRepository(
     }
 
     suspend fun login(nikInput: String, passwordInput: String): Result<User> = withContext(Dispatchers.IO) {
-        val userEntity = userDao.getUserByNik(nikInput.trim())
+        val trimmedNik = nikInput.trim()
+        val trimmedPass = passwordInput.trim()
+
+        if (trimmedNik.isEmpty()) {
+            return@withContext Result.failure(Exception("NIK tidak boleh kosong."))
+        }
+        if (trimmedPass.isEmpty()) {
+            return@withContext Result.failure(Exception("Password tidak boleh kosong."))
+        }
+
+        val userEntity = userDao.getUserByNik(trimmedNik)
         if (userEntity != null) {
-            val valid = userEntity.password == passwordInput.trim() || passwordInput.trim() == "123456" || passwordInput.trim().isEmpty()
-            if (valid) {
+            if (userEntity.password == trimmedPass) {
                 val user = userEntity.toDomain()
                 _currentUser.value = user
                 Result.success(user)
             } else {
-                Result.failure(Exception("Password yang Anda masukkan salah."))
+                Result.failure(Exception("Password yang Anda masukkan salah. Silakan periksa kembali."))
             }
         } else {
             // Check fallback from master data
             val match = (listOf(MasterData.defaultAdmin) + MasterData.technicians).find {
-                it.nik == nikInput.trim() || it.email.equals(nikInput.trim(), ignoreCase = true)
+                it.nik == trimmedNik || it.email.equals(trimmedNik, ignoreCase = true)
             }
             if (match != null) {
-                _currentUser.value = match
-                Result.success(match)
+                val expectedPass = if (match.role == UserRole.ADMIN) "admin" else "telkom"
+                if (trimmedPass == expectedPass) {
+                    _currentUser.value = match
+                    Result.success(match)
+                } else {
+                    Result.failure(Exception("Password yang Anda masukkan salah. Silakan periksa kembali."))
+                }
             } else {
-                Result.failure(Exception("Pengguna dengan NIK '$nikInput' tidak ditemukan."))
+                Result.failure(Exception("Pengguna dengan NIK '$trimmedNik' tidak terdaftar."))
             }
         }
     }
@@ -234,12 +248,62 @@ class InspectionRepository(
             addAuditLog(
                 actorName = submission.technicianName,
                 actorRole = "Teknisi",
-                action = "UNGGAH",
+                action = if (submission.status == InspectionStatus.PENDING && submission.adminFeedback == null) "UNGGAH" else "UNGGAH",
                 equipment = submission.equipmentName,
                 techName = submission.technicianName,
                 notes = "Tersimpan permanen di database internal (${submission.compressedSizeKb} KB)"
             )
         }
+    }
+
+    fun reuploadSubmission(submission: InspectionSubmission) {
+        scope.launch(Dispatchers.IO) {
+            val updated = submission.copy(
+                status = InspectionStatus.PENDING,
+                adminFeedback = null,
+                verifiedBy = null,
+                verifiedAt = null,
+                updatedAt = System.currentTimeMillis()
+            )
+            val entity = InspectionEntity.fromDomain(updated)
+            inspectionDao.insertSubmission(entity)
+
+            addAuditLog(
+                actorName = updated.technicianName,
+                actorRole = "Teknisi",
+                action = "UPLOAD_ULANG",
+                equipment = updated.equipmentName,
+                techName = updated.technicianName,
+                notes = "Mengunggah ulang bukti foto & pembaruan OCR (${updated.compressedSizeKb} KB)"
+            )
+        }
+    }
+
+    suspend fun rerunOcr(submissionId: String, adminName: String): Result<InspectionSubmission> = withContext(Dispatchers.IO) {
+        val entity = inspectionDao.getSubmissionById(submissionId)
+            ?: return@withContext Result.failure(Exception("Data pemeriksaan tidak ditemukan."))
+
+        val ocrResult = com.example.service.ocr.OcrService.processOcr(entity.equipmentId, entity.equipmentName)
+
+        val updated = entity.copy(
+            ocrConfidence = ocrResult.confidence,
+            ocrRawResult = ocrResult.extractedText,
+            ocrCorrectedResult = ocrResult.extractedText,
+            capturedDate = ocrResult.detectedDate,
+            capturedLocation = ocrResult.detectedLocation,
+            updatedAt = System.currentTimeMillis()
+        )
+        inspectionDao.insertSubmission(updated)
+
+        addAuditLog(
+            actorName = adminName,
+            actorRole = "Admin Assurance",
+            action = "OCR_ULANG",
+            equipment = entity.equipmentName,
+            techName = entity.technicianName,
+            notes = "Memproses ulang OCR PaddleOCR (Confidence: ${ocrResult.confidence}%)"
+        )
+        Result.success(updated.toDomain())
     }
 
     fun verifySubmission(
