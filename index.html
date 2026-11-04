@@ -3,36 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alker Salker Telkom Akses</title>
+    <title>Alker Salker - Telkom Akses Padang</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f8;
-            color: #333;
-            text-align: center;
-            padding-top: 100px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #fff;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f4f6f8 0%, #e9edf2 100%);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 550px;
             padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            border-top: 5px solid #d9381e;
+        }
+        .badge {
+            display: inline-block;
+            background-color: #fdf2f0;
+            color: #d9381e;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         h1 {
-            color: #d9381e; /* Warna bernuansa merah khas Telkom */
+            color: #1a1a1a;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #d9381e;
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 20px;
         }
         p {
             color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background-color: #d9381e;
+            color: white;
+            box-shadow: 0 4px 10px rgba(217, 56, 30, 0.3);
+        }
+        .btn-primary:hover {
+            background-color: #b82d16;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background-color: #f1f3f5;
+            color: #495057;
+        }
+        .btn-secondary:hover {
+            background-color: #e2e6ea;
+            transform: translateY(-2px);
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+
+    <div class="card">
+        <span class="badge">Live Deployment</span>
         <h1>Alker Salker Telkom Akses</h1>
-        <p>PT Telkom Akses Padang</p>
-        <p>Halaman dokumentasi atau pratinjau project berhasil di-deploy ke Vercel.</p>
+        <div class="subtitle">PT Telkom Akses Padang</div>
+        
+        <p>
+            Halaman web resmi untuk pratinjau project dan dokumentasi aplikasi. 
+            Silakan akses tautan di bawah ini untuk melihat repository atau mengunduh aplikasi terkait.
+        </p>
+
+        <div class="btn-group">
+            <!-- Ubah link di bawah sesuai tautan repository GitHub Anda -->
+            <a href="https://github.com/whyzenc/alker-salker-telkom-akses" target="_blank" class="btn btn-primary">Lihat Repository GitHub</a>
+            
+            <!-- Ubah atau arahkan link ini ke tempat penyimpanan APK Anda jika ada -->
+            <a href="#" class="btn btn-secondary">Unduh Aplikasi (.apk)</a>
+        </div>
+
+        <div class="footer">
+            Powered by Vercel &bull; Whyzenc Projects
+        </div>
     </div>
+
 </body>
 </html>
