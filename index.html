@@ -1,129 +1,417 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alker Salker - Telkom Akses Padang</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f4f6f8 0%, #e9edf2 100%);
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .card {
-            background: #ffffff;
-            width: 100%;
-            max-width: 550px;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-            text-align: center;
-            border-top: 5px solid #d9381e;
-        }
-        .badge {
-            display: inline-block;
-            background-color: #fdf2f0;
-            color: #d9381e;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        h1 {
-            color: #1a1a1a;
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
-        .subtitle {
-            color: #d9381e;
-            font-weight: 600;
-            font-size: 15px;
-            margin-bottom: 20px;
-        }
-        p {
-            color: #666;
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 30px;
-        }
-        .btn-group {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-        }
-        .btn-primary {
-            background-color: #d9381e;
-            color: white;
-            box-shadow: 0 4px 10px rgba(217, 56, 30, 0.3);
-        }
-        .btn-primary:hover {
-            background-color: #b82d16;
-            transform: translateY(-2px);
-        }
-        .btn-secondary {
-            background-color: #f1f3f5;
-            color: #495057;
-        }
-        .btn-secondary:hover {
-            background-color: #e2e6ea;
-            transform: translateY(-2px);
-        }
-        .footer {
-            margin-top: 30px;
-            font-size: 12px;
-            color: #999;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alker Salker Telkom Akses | Pemeriksaan Alat Kerja Berbasis OCR</title>
+<meta name="description" content="Aplikasi mobile pembaca dokumen otomatis berbasis OCR untuk pemeriksaan dokumentasi Alat Kerja dan Sarana Kerja di PT Telkom Akses Padang.">
+<style>
+:root{
+  --red:#d9381e; --red-dark:#b12a14; --red-soft:#fdf2f0;
+  --ink:#16181d; --text:#4a5058; --muted:#7b828c;
+  --line:#e6e9ee; --bg:#f6f7f9; --card:#fff;
+  --radius:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:#fff;line-height:1.65;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+section{padding:88px 0}
+.eyebrow{display:inline-block;color:var(--red);font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+h2{color:var(--ink);font-size:clamp(26px,3.4vw,36px);line-height:1.2;margin-bottom:14px;letter-spacing:-.01em}
+.lead{font-size:17px;max-width:680px}
+.head{margin-bottom:48px}
+.head.center{text-align:center}.head.center .lead{margin:0 auto}
+
+/* nav */
+nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--ink)}
+.brand img{height:34px;width:auto}
+.brand span{font-size:15px;padding-left:12px;border-left:1px solid var(--line)}
+.links{display:flex;gap:26px;font-size:14px;font-weight:500}
+.links a{color:var(--text);transition:color .2s}
+.links a:hover{color:var(--red)}
+.nav-cta{background:var(--red);color:#fff;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;transition:background .2s}
+.nav-cta:hover{background:var(--red-dark)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;font-size:15px;font-weight:600;border-radius:10px;transition:transform .2s,background .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px)}
+.btn-primary{background:var(--red);color:#fff;box-shadow:0 8px 20px rgba(217,56,30,.28)}
+.btn-primary:hover{background:var(--red-dark)}
+.btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn-ghost:hover{border-color:#cfd4db}
+.btn-light{background:#fff;color:var(--red)}
+.btn-outline{border:1px solid rgba(255,255,255,.5);color:#fff}
+.btn-outline:hover{background:rgba(255,255,255,.1)}
+
+/* hero */
+.hero{background:linear-gradient(135deg,#fff 0%,#fbf3f1 60%,#f7e4df 100%);padding:72px 0 0;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:end}
+.hero-copy{padding-bottom:72px;align-self:center}
+.badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #f3d5cf;color:var(--red);font-size:12px;font-weight:700;padding:6px 14px;border-radius:99px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:22px}
+.badge i{width:8px;height:8px;border-radius:50%;background:#2fb457;box-shadow:0 0 0 4px rgba(47,180,87,.18)}
+.hero h1{color:var(--ink);font-size:clamp(34px,5vw,54px);line-height:1.1;letter-spacing:-.02em;margin-bottom:18px}
+.hero h1 em{font-style:normal;color:var(--red)}
+.hero p.lead{margin-bottom:30px}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.hero-meta{display:flex;align-items:center;gap:14px;margin-top:34px;font-size:13px;color:var(--muted)}
+.hero-meta img{height:40px;width:auto;border-radius:6px}
+.hero-meta b{color:var(--ink);display:block;font-size:14px}
+.phones{position:relative;height:520px}
+.phones img{position:absolute;border-radius:26px 26px 0 0;box-shadow:0 24px 50px rgba(30,20,20,.2);border:6px solid #1b1d22;border-bottom:0;background:#fff}
+.phones .p1{width:230px;left:2%;bottom:-30px;transform:rotate(-4deg)}
+.phones .p2{width:250px;left:30%;bottom:0;z-index:2}
+.phones .p3{width:230px;right:0;bottom:-40px;transform:rotate(4deg)}
+
+/* stats */
+.stats{padding:0;margin-top:-1px}
+.stats .wrap{width:calc(100% - 48px);padding:0;display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:var(--radius);background:#fff;margin:40px auto 0;box-shadow:0 12px 30px rgba(0,0,0,.06)}
+.stat{padding:26px 20px;text-align:center;border-right:1px solid var(--line)}
+.stat:last-child{border:0}
+.stat b{display:block;font-size:34px;color:var(--red);line-height:1.1}
+.stat span{font-size:13px;color:var(--muted)}
+
+/* about */
+.about{padding-top:72px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.panel{background:var(--bg);border-radius:var(--radius);padding:32px}
+.panel h3{color:var(--ink);font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.panel h3 span{width:32px;height:32px;border-radius:9px;background:#fff;display:grid;place-items:center;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.panel ul{list-style:none}
+.panel li{position:relative;padding-left:22px;margin-bottom:10px;font-size:15px}
+.panel li::before{content:"";position:absolute;left:0;top:10px;width:8px;height:8px;border-radius:2px;background:var(--red)}
+.panel.hl{background:var(--red);color:#ffe6e1}
+.panel.hl h3{color:#fff}.panel.hl h3 span{background:rgba(255,255,255,.18);box-shadow:none}
+.panel.hl li::before{background:#fff}
+.note{margin-top:20px;font-size:14px;color:var(--muted);border-left:3px solid var(--red);padding-left:14px}
+
+/* features */
+.features{background:var(--bg)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:28px;transition:transform .25s,box-shadow .25s}
+.feat:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(0,0,0,.07)}
+.ico{width:46px;height:46px;border-radius:12px;background:var(--red-soft);display:grid;place-items:center;margin-bottom:18px}
+.ico svg{width:24px;height:24px;stroke:var(--red);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.feat h3{color:var(--ink);font-size:17px;margin-bottom:8px}
+.feat p{font-size:14.5px}
+
+/* flow */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;counter-reset:s;position:relative}
+.step{position:relative;padding:26px 22px;border:1px solid var(--line);border-radius:var(--radius);background:#fff}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--red);color:#fff;font-weight:700;font-size:15px;margin-bottom:16px}
+.step h3{color:var(--ink);font-size:16px;margin-bottom:6px}
+.step p{font-size:14px}
+.status{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:36px}
+.pill{padding:8px 16px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid}
+.pill.a{background:#f3f4f6;color:#666;border-color:#e0e2e6}
+.pill.b{background:#fff7e6;color:#b36b00;border-color:#fde2ab}
+.pill.c{background:#eaf8ef;color:#1f8a43;border-color:#bfe8cd}
+.arrow{align-self:center;color:var(--muted)}
+
+/* gallery */
+.gallery{background:#16181d;color:#b9bec7}
+.gallery h2{color:#fff}
+.gallery .eyebrow{color:#ff7a62}
+.scroller{display:flex;gap:22px;overflow-x:auto;padding:8px 24px 28px;scroll-snap-type:x mandatory;max-width:1120px;margin:0 auto}
+.scroller::-webkit-scrollbar{height:8px}.scroller::-webkit-scrollbar-thumb{background:#3a3e46;border-radius:8px}
+.shot{flex:0 0 240px;scroll-snap-align:start}
+.shot img{border-radius:22px;border:5px solid #2a2d34;width:100%}
+.shot figcaption{margin-top:14px;font-size:13.5px;color:#9aa0aa;text-align:center}
+.shot figcaption b{display:block;color:#fff;font-size:14.5px}
+
+/* tech */
+.tech-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:40px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 26px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;font-size:14px;color:var(--ink);font-weight:600}
+.chip small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.diagram{background:var(--bg);border-radius:var(--radius);padding:18px;border:1px solid var(--line)}
+.diagram img{border-radius:10px;background:#fff;width:100%}
+.diagram figcaption{font-size:12.5px;color:var(--muted);margin-top:10px;text-align:center}
+
+/* results */
+.results{background:var(--bg)}
+.res{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:30px}
+.card h3{color:var(--ink);font-size:18px;margin-bottom:14px}
+.card li{list-style:none;position:relative;padding-left:26px;margin-bottom:10px;font-size:14.5px}
+.card.ok li::before{content:"✓";position:absolute;left:0;color:#1f8a43;font-weight:700}
+.card.dev li::before{content:"→";position:absolute;left:0;color:var(--red);font-weight:700}
+
+/* download */
+.cta{padding:0 0 88px;background:var(--bg)}
+.cta-box{background:linear-gradient(135deg,var(--red) 0%,#a92410 100%);border-radius:24px;padding:56px 40px;text-align:center;color:#ffe3dd;position:relative;overflow:hidden}
+.cta-box::after{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.08)}
+.cta-box h2{color:#fff}
+.cta-box p{max-width:560px;margin:0 auto 28px}
+.cta-box .btns{justify-content:center;position:relative;z-index:1}
+.cta-box small{display:block;margin-top:18px;font-size:12.5px;opacity:.8}
+
+/* footer */
+footer{background:#101216;color:#9aa0aa;padding:48px 0 28px;font-size:14px}
+.f-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:32px;padding-bottom:30px;border-bottom:1px solid #23262d}
+footer h4{color:#fff;font-size:14px;margin-bottom:12px}
+footer .logo-box{background:#fff;display:inline-block;padding:8px 12px;border-radius:8px;margin-bottom:14px}
+footer .logo-box img{height:36px}
+footer a{display:block;margin-bottom:8px}footer a:hover{color:#fff}
+.copy{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:22px;font-size:12.5px}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(18px);transition:opacity .6s,transform .6s}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+@media(max-width:900px){
+  .links{display:none}
+  .hero .wrap,.tech-grid,.cols,.res{grid-template-columns:1fr}
+  .hero-copy{padding-bottom:20px}
+  .phones{height:400px}
+  .phones .p1{width:170px}.phones .p2{width:190px;left:28%}.phones .p3{width:170px}
+  .stats .wrap{grid-template-columns:1fr 1fr}
+  .stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .grid3{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr 1fr}
+  .f-grid{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  section{padding:64px 0}
+  .brand span{display:none}
+  .grid3,.steps{grid-template-columns:1fr}
+  .phones{height:340px}
+  .phones .p1{width:140px;left:0}.phones .p2{width:160px;left:30%}.phones .p3{width:140px}
+  .cta-box{padding:44px 22px}
+  .btn{width:100%;justify-content:center}
+}
+</style>
 </head>
 <body>
 
-    <div class="card">
-        <span class="badge">Live Deployment</span>
-        <h1>Alker Salker Telkom Akses</h1>
-        <div class="subtitle">PT Telkom Akses Padang</div>
-        
-        <p>
-            Halaman web resmi untuk pratinjau project dan dokumentasi aplikasi. 
-            Silakan akses tautan di bawah ini untuk melihat repository atau mengunduh aplikasi terkait.
-        </p>
-
-        <div class="btn-group">
-            <!-- Ubah link di bawah sesuai tautan repository GitHub Anda -->
-            <a href="https://github.com/whyzenc/alker-salker-telkom-akses" target="_blank" class="btn btn-primary">Lihat Repository GitHub</a>
-            
-            <!-- Ubah atau arahkan link ini ke tempat penyimpanan APK Anda jika ada -->
-            <a href="https://github.com/whyzenc/alker-salker-telkom-akses/releases/download/v1.0.0/app-debug.apk" class="btn btn-secondary">Unduh Aplikasi (.apk)</a>
-        </div>
-
-        <div class="footer">
-            Powered by Vercel &bull; Whyzenc Projects
-        </div>
+<nav>
+  <div class="wrap">
+    <a href="#top" class="brand"><img src="assets/telkomakses-logo.png" alt="Telkom Akses"><span>Alker Salker</span></a>
+    <div class="links">
+      <a href="#tentang">Tentang</a><a href="#fitur">Fitur</a><a href="#alur">Cara Kerja</a><a href="#tampilan">Tampilan</a><a href="#teknologi">Teknologi</a><a href="#hasil">Hasil</a>
     </div>
+    <a class="nav-cta" href="#unduh">Unduh</a>
+  </div>
+</nav>
 
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-copy">
+      <span class="badge"><i></i>Live Deployment</span>
+      <h1>Pemeriksaan Alat Kerja <em>Lebih Cepat</em> dengan OCR</h1>
+      <p class="lead">Aplikasi mobile pembaca dokumen otomatis yang membaca teks pada foto dokumentasi Alat Kerja (Alker) dan Sarana Kerja (Sarker) teknisi, lalu menyatukan unggah, penyimpanan, dan verifikasi dalam satu alur.</p>
+      <div class="btns">
+        <a href="https://github.com/whyzenc/alker-salker-telkom-akses" target="_blank" rel="noopener" class="btn btn-primary">Lihat Repository GitHub</a>
+        <a href="https://github.com/whyzenc/alker-salker-telkom-akses/releases/download/v1.0.0/app-debug.apk" class="btn btn-ghost">Unduh Aplikasi (.apk)</a>
+      </div>
+      <div class="hero-meta">
+        <img src="assets/telkomakses-logo.png" alt="">
+        <div><b>PT Telkom Akses Padang</b>Pengalaman Lapangan Industri, Juni – Agustus 2026</div>
+      </div>
+    </div>
+    <div class="phones" aria-hidden="true">
+      <img class="p1" src="assets/app-login.jpg" alt="">
+      <img class="p3" src="assets/app-admin-rekap.jpg" alt="">
+      <img class="p2" src="assets/app-dashboard.jpg" alt="">
+    </div>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="wrap">
+    <div class="stat"><b>27</b><span>Jenis peralatan diperiksa</span></div>
+    <div class="stat"><b>2</b><span>Peran: teknisi &amp; admin</span></div>
+    <div class="stat"><b>3</b><span>Status pemeriksaan</span></div>
+    <div class="stat"><b>12</b><span>Endpoint REST API</span></div>
+  </div>
+</div>
+
+<section class="about" id="tentang">
+  <div class="wrap">
+    <div class="head rv">
+      <span class="eyebrow">Tentang Aplikasi</span>
+      <h2>Dari masalah di lapangan menjadi solusi digital</h2>
+      <p class="lead">Selama PLI di bagian Admin Assurance PT Telkom Akses Padang, dokumentasi Alker dan Sarker dari teknisi dikirim lewat grup Telegram lalu diperiksa satu per satu secara manual. Aplikasi ini dikembangkan untuk membantu proses tersebut.</p>
+    </div>
+    <div class="cols">
+      <div class="panel rv">
+        <h3><span>⚠</span>Kondisi sebelumnya</h3>
+        <ul>
+          <li>Foto dikirim ke grup Telegram per kategori pekerjaan.</li>
+          <li>Tanggal, lokasi, dan kondisi alat dibaca visual oleh pemeriksa.</li>
+          <li>Rekap dicatat manual di Microsoft Excel dan sistem My Army.</li>
+          <li>Daftar teknisi yang belum lengkap dibuat dan ditindaklanjuti manual.</li>
+        </ul>
+      </div>
+      <div class="panel hl rv">
+        <h3><span>✓</span>Dengan aplikasi</h3>
+        <ul>
+          <li>Foto diunggah langsung pada peralatan terkait di aplikasi.</li>
+          <li>OCR membaca teks pada foto, termasuk tanggal pengambilan.</li>
+          <li>Foto, teks OCR, dan data terstruktur tersimpan di basis data.</li>
+          <li>Status dan progres pemeriksaan tampil per teknisi, misalnya 7/27.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note rv">Aplikasi dikembangkan setelah pelaksanaan PLI atas usulan dosen pembimbing, bukan permintaan langsung dari PT Telkom Akses, dan masih berstatus prototipe.</p>
+  </div>
+</section>
+
+<section class="features" id="fitur">
+  <div class="wrap">
+    <div class="head center rv">
+      <span class="eyebrow">Fitur Utama</span>
+      <h2>Satu alur untuk teknisi dan admin</h2>
+      <p class="lead">Dua peran pengguna dengan tampilan yang disesuaikan dengan kebutuhan masing-masing.</p>
+    </div>
+    <div class="grid3">
+      <div class="feat rv"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></div><h3>Ambil &amp; unggah foto</h3><p>Teknisi memotret alat dengan kamera atau memilih dari galeri. Foto dikompresi sebelum diunggah agar ringan.</p></div>
+      <div class="feat rv"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3M8 9h8M8 12h8M8 15h5"/></svg></div><h3>OCR otomatis</h3><p>PaddleOCR membaca teks pada foto, lalu ekstraksi berbasis aturan mengambil tanggal, nomor seri, merek, dan model.</p></div>
+      <div class="feat rv"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5L16 9.5"/></svg></div><h3>Verifikasi admin</h3><p>Admin memeriksa foto beserta hasil OCR, menjalankan OCR ulang bila perlu, lalu menekan “Verifikasi Valid”.</p></div>
+      <div class="feat rv"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><h3>Pantau progres</h3><p>Status Belum Upload, Perlu Review, dan Terverifikasi terlihat per peralatan, lengkap dengan progres per teknisi.</p></div>
+      <div class="feat rv"><div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><h3>27 jenis peralatan</h3><p>Splicer, OPM, VFL, LAN Tester, OTDR, kendaraan, perlengkapan, hingga paket internet dalam satu daftar.</p></div>
+      <div class="feat rv"><div class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div><h3>Validasi &amp; keamanan dasar</h3><p>Format JPG/PNG/WEBP, maksimal 10 MB dan 3 foto per peralatan. Kata sandi disimpan sebagai hash PBKDF2-SHA256.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="alur">
+  <div class="wrap">
+    <div class="head center rv">
+      <span class="eyebrow">Cara Kerja</span>
+      <h2>Dari foto sampai terverifikasi</h2>
+    </div>
+    <div class="steps">
+      <div class="step rv"><h3>Teknisi memilih alat</h3><p>Login dengan NIK, lalu pilih peralatan dari daftar pemeriksaan periode aktif.</p></div>
+      <div class="step rv"><h3>Foto diunggah</h3><p>Server memvalidasi format, ukuran, dan jumlah foto sebelum menyimpannya.</p></div>
+      <div class="step rv"><h3>OCR membaca teks</h3><p>Teks mentah, skor confidence, dan data terstruktur disimpan ke basis data.</p></div>
+      <div class="step rv"><h3>Admin memverifikasi</h3><p>Admin memeriksa bukti dan hasil OCR, lalu menetapkan status valid.</p></div>
+    </div>
+    <div class="status rv">
+      <span class="pill a">Belum Upload</span><span class="arrow">→</span>
+      <span class="pill b">Perlu Review</span><span class="arrow">→</span>
+      <span class="pill c">Terverifikasi</span>
+    </div>
+  </div>
+</section>
+
+<section class="gallery" id="tampilan">
+  <div class="wrap">
+    <div class="head rv">
+      <span class="eyebrow">Tampilan Aplikasi</span>
+      <h2>Antarmuka untuk dua peran</h2>
+      <p class="lead">Geser ke samping untuk melihat tampilan sisi teknisi dan admin. Data pada tangkapan layar adalah akun demo.</p>
+    </div>
+  </div>
+  <div class="scroller">
+    <figure class="shot"><img loading="lazy" src="assets/app-login.jpg" alt="Halaman login"><figcaption><b>Login</b>Masuk dengan NIK dan akun cepat demo</figcaption></figure>
+    <figure class="shot"><img loading="lazy" src="assets/app-dashboard.jpg" alt="Dasbor teknisi"><figcaption><b>Dasbor Teknisi</b>Periode aktif, progres, dan daftar alat</figcaption></figure>
+    <figure class="shot"><img loading="lazy" src="assets/app-foto-bukti.jpg" alt="Foto bukti alat"><figcaption><b>Foto Bukti</b>Ambil foto atau pilih dari galeri</figcaption></figure>
+    <figure class="shot"><img loading="lazy" src="assets/app-ocr-detail.jpg" alt="Hasil OCR"><figcaption><b>Hasil OCR</b>Teks terbaca dan dapat dikoreksi</figcaption></figure>
+    <figure class="shot"><img loading="lazy" src="assets/app-verifikasi.jpg" alt="Verifikasi admin"><figcaption><b>Verifikasi</b>Admin menyetujui atau menolak bukti</figcaption></figure>
+    <figure class="shot"><img loading="lazy" src="assets/app-admin-rekap.jpg" alt="Rekap teknisi"><figcaption><b>Rekap Teknisi</b>Monitoring periode berjalan</figcaption></figure>
+    <figure class="shot"><img loading="lazy" src="assets/app-admin-antrean.jpg" alt="Antrean verifikasi"><figcaption><b>Daftar Teknisi</b>Cari berdasarkan nama, NIK, atau STO</figcaption></figure>
+  </div>
+</section>
+
+<section id="teknologi">
+  <div class="wrap tech-grid">
+    <div class="rv">
+      <span class="eyebrow">Teknologi</span>
+      <h2>Arsitektur klien–server yang sederhana</h2>
+      <p class="lead">Aplikasi mobile Flutter berkomunikasi dengan backend FastAPI melalui HTTP/JSON. OCR dijalankan oleh PaddleOCR, dan data tersimpan di SQLite.</p>
+      <div class="chips">
+        <div class="chip">Flutter<small>Aplikasi mobile</small></div>
+        <div class="chip">FastAPI<small>Backend Python</small></div>
+        <div class="chip">PaddleOCR<small>Mesin OCR</small></div>
+        <div class="chip">SQLite<small>+ SQLAlchemy</small></div>
+        <div class="chip">Swagger<small>Dokumentasi API</small></div>
+      </div>
+      <a class="btn btn-ghost" href="https://github.com/whyzenc/alker-salker-telkom-akses" target="_blank" rel="noopener">Lihat kode sumber</a>
+    </div>
+    <figure class="diagram rv">
+      <img src="assets/arsitektur.png" alt="Diagram arsitektur aplikasi">
+      <figcaption>Arsitektur aplikasi: Flutter, FastAPI, PaddleOCR, SQLite</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="results" id="hasil">
+  <div class="wrap">
+    <div class="head center rv">
+      <span class="eyebrow">Hasil &amp; Pengembangan</span>
+      <h2>Prototipe yang jujur tentang batasannya</h2>
+      <p class="lead">Aplikasi diuji penulis sendiri dengan dua akun uji. Berikut capaian dan rencana perbaikannya.</p>
+    </div>
+    <div class="res">
+      <div class="card ok rv">
+        <h3>Yang sudah berjalan</h3>
+        <ul>
+          <li>Login teknisi dan admin dengan dasbor sesuai peran.</li>
+          <li>Unggah foto dengan validasi format, ukuran, dan jumlah.</li>
+          <li>OCR otomatis; tanggal foto terbaca sesuai overlay pada contoh uji.</li>
+          <li>Verifikasi admin memperbarui status dan progres (contoh 0/27 → 7/27).</li>
+        </ul>
+      </div>
+      <div class="card dev rv">
+        <h3>Rencana pengembangan</h3>
+        <ul>
+          <li>Memperbaiki aturan ekstraksi nomor seri dan nama pada ID Card.</li>
+          <li>Memvalidasi tanggal foto terhadap periode pemeriksaan.</li>
+          <li>Autentikasi berbasis token dan pembatasan akses per peran.</li>
+          <li>Pengujian lebih luas pada berbagai kondisi foto dan pengguna sebenarnya.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="unduh">
+  <div class="wrap">
+    <div class="cta-box rv">
+      <h2>Coba aplikasinya sekarang</h2>
+      <p>Unduh APK untuk perangkat Android atau jelajahi kode sumber dan dokumentasinya di GitHub.</p>
+      <div class="btns">
+        <a class="btn btn-light" href="https://github.com/whyzenc/alker-salker-telkom-akses/releases/download/v1.0.0/app-debug.apk">Unduh Aplikasi (.apk)</a>
+        <a class="btn btn-outline" href="https://github.com/whyzenc/alker-salker-telkom-akses" target="_blank" rel="noopener">Lihat Repository GitHub</a>
+      </div>
+      <small>Versi debug untuk pratinjau. Aktifkan “instal dari sumber tidak dikenal” di Android bila diminta.</small>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div>
+        <div class="logo-box"><img src="assets/telkomakses-logo.png" alt="Telkom Akses"></div>
+        <p>Pengembangan Aplikasi Mobile Pembaca Dokumen Otomatis Berbasis OCR di PT Telkom Akses Padang.</p>
+      </div>
+      <div>
+        <h4>Navigasi</h4>
+        <a href="#tentang">Tentang</a><a href="#fitur">Fitur</a><a href="#tampilan">Tampilan</a><a href="#teknologi">Teknologi</a>
+      </div>
+      <div>
+        <h4>Pengembang</h4>
+        <p>Whenny Zenica<br>NIM 23343022<br>S1 Informatika, Universitas Negeri Padang</p>
+      </div>
+    </div>
+    <div class="copy"><span>© 2026 Whyzenc Projects. Proyek PLI Fakultas Teknik UNP.</span><span>Powered by Vercel</span></div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var els=document.querySelectorAll('.rv');
+  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return}
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
+  els.forEach(function(e){io.observe(e)});
+})();
+</script>
 </body>
 </html>
